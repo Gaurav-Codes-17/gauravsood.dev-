@@ -5,7 +5,7 @@ import { useIsMobile } from '@/lib/usePerformance'
 
 const SOCIALS = [
   {
-    label: 'Email', value: 'gaurav@example.com', href: 'mailto:gaurav@example.com',
+    label: 'Email', value: 'gaurav.codes.17@gmail.com', href: 'mailto:gaurav.codes.17@gmail.com',
     icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m2 7 10 7 10-7"/></svg>,
     color: '#4f6ef7',
   },

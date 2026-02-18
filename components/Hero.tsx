@@ -418,41 +418,6 @@ export default function Hero() {
           ].map(stat => <AnimatedStat key={stat.label} {...stat} />)}
         </motion.div>
       </div>
-
-      {/* Scroll Indicator */}
-      <motion.button
-        onClick={handleScroll}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.6 }}
-        transition={{ delay: 1.5 }}
-        whileHover={{ opacity: 1 }}
-        aria-label="Scroll to about section"
-        style={{
-          position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)',
-          background: 'transparent', border: 'none', cursor: 'pointer',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', zIndex: 2,
-        }}
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}
-        >
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--text-muted)', letterSpacing: '0.15em' }}>SCROLL</span>
-          <div style={{
-            width: '24px', height: '40px',
-            border: '1.5px solid var(--border-bright)',
-            borderRadius: '12px', display: 'flex', justifyContent: 'center', paddingTop: '6px',
-          }}>
-            <motion.div
-              animate={{ y: [0, 10, 0], opacity: [1, 0.3, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ width: '4px', height: '8px', background: 'var(--accent)', borderRadius: '2px' }}
-            />
-          </div>
-        </motion.div>
-      </motion.button>
-
       <style jsx>{`
         @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
         @keyframes pulse-glow {

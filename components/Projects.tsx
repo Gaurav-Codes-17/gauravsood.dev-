@@ -20,29 +20,11 @@ type Project = {
   category: string
   badge?: string
   preview?: string
-  screenshots?: string[]   // multiple snapshots for carousel
+  screenshots?: string[]
   previewVideo?: string
   internal?: boolean
 }
 
-/*
- * ─── HOW TO ADD SCREENSHOTS ──────────────────────────────────────────────────
- *
- * 1. Drop your screenshot files into /public/previews/
- *    e.g.  /public/previews/onslog-1.png
- *          /public/previews/onslog-2.png
- *          /public/previews/onslog-3.png
- *
- * 2. Add them to the `screenshots` array for the matching project below.
- *    Order matters — first item shows first.
- *
- * 3. They auto-rotate every 3.2s on hover (card) and immediately (modal).
- *    The dots at the bottom let users jump to any slide manually.
- *
- * TIP: Ideal screenshot size is 1280×800px (16:10). Any size works but
- *      wider screenshots look best in the Mac browser frame.
- * ─────────────────────────────────────────────────────────────────────────────
- */
 const PROJECTS: Project[] = [
   {
     id: 'onslog',
@@ -60,22 +42,17 @@ const PROJECTS: Project[] = [
       '🏗️ Built the full frontend architecture from scratch with scalable component structure',
       '⚡ Integrated with backend APIs, handled complex form state, and built reusable UI system',
     ],
-    tech: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'REST API', 'RBAC', 'Zustand'],
+    tech: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'REST API', 'RBAC', 'NextAuth.js'],
     color: 'rgba(6,214,160,0.07)',
     accent: '#06d6a0',
     live: 'https://onslog.com',
     audioSrc: '/audio/onslog.mp3',
     preview: '/previews/onslog.png',
-    screenshots: [
-      '/previews/onslog.png',
-      '/previews/onslog-2.png',
-      '/previews/onslog-3.png',
-      '/previews/onslog-4.png',
-    ],
-    year: '2024–25',
+    screenshots: ['/previews/onslog.png', '/previews/onslog-2.png', '/previews/onslog-3.png', '/previews/onslog-4.png'],
+    year: '2026',
     category: 'Enterprise',
     badge: 'Production',
-    internal: true,
+    internal: false,
   },
   {
     id: 'zenfeed',
@@ -93,19 +70,43 @@ const PROJECTS: Project[] = [
       '📱 Fully responsive — mobile-first layout that works on all screen sizes',
       '🚀 Deployed to Vercel — live and publicly accessible right now',
     ],
-    tech: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'Prisma', 'PostgreSQL', 'NextAuth', 'Zustand'],
+    tech: ['React', 'Javascript', 'Tailwind CSS',  'MongoDB', 'Express.js', 'Redux', 'Node.js'],
     color: 'rgba(79,110,247,0.07)',
     accent: '#4f6ef7',
     live: 'https://zenfeed-app.vercel.app',
     audioSrc: '/audio/zenfeed.mp3',
     preview: '/previews/zenfeed.png',
-    screenshots: [
-      '/previews/zenfeed.png',
-      '/previews/zenfeed-2.png',
-      '/previews/zenfeed-3.png',
-    ],
-    year: '2024',
+    screenshots: ['/previews/zenfeed.png', '/previews/zenfeed-2.png', '/previews/zenfeed-3.png'],
+    year: '2025-26',
     category: 'Full Stack',
+    badge: 'Live',
+    internal: true,
+  },
+  {
+    id: 'bizztunes',
+    title: 'BizzTunes',
+    tagline: 'Audio branding platform for businesses — live in production.',
+    description:
+      'Designed and built the full marketing website for BizzTunes — a professional B2B service helping companies replace default ringtones with branded caller tunes and custom jingles, distributed across 14+ global platforms.',
+    longDescription:
+      "BizzTunes is a real client project I designed and built from scratch. The business helps companies worldwide create professional audio branding — custom caller tunes, voice-overs, and jingles that play when clients call them. I handled everything: the UI, copywriting structure, SEO-optimised page architecture, platform showcase, FAQ accordion, and contact section. It's live, indexed, and driving real business enquiries.",
+    highlights: [
+      '🎵 Service showcase — six audio branding services with clean card layout and CTAs',
+      '🌍 Platform distribution section — 14+ streaming platforms displayed in animated marquee',
+      '📋 5-step process flow — visual step-by-step guide from consultation to activation',
+      '❓ FAQ accordion — collapsible answers for common buyer questions',
+      '📞 Multi-channel contact — phone, email, WhatsApp, and office location all integrated',
+      '⚡ Built with Next.js — fast, SEO-optimised, fully responsive across all devices',
+    ],
+    tech: ['Next.js', 'TypeScript', 'React', 'Tailwind CSS', 'SEO', 'Responsive Design' , 'Framer Motion'],
+    color: 'rgba(251,191,36,0.07)',
+    accent: '#f59e0b',
+    live: 'https://bizztunes.in',
+    audioSrc: '/audio/bizztunes.mp3',
+    preview: '/previews/bizztunes.png',
+    screenshots: ['/previews/bizztunes.png', '/previews/bizztunes-2.png', '/previews/bizztunes-3.png', '/previews/bizztunes-4.png', '/previews/bizztunes-5.png'],
+    year: '2026',
+    category: 'Client Work',
     badge: 'Live',
   },
 ]
@@ -115,111 +116,86 @@ function ScreenshotCarousel({ screenshots, accent, autoPlay, inView }: {
   screenshots: string[]; accent: string; autoPlay: boolean; inView: boolean
 }) {
   const [current, setCurrent] = useState(0)
-  const [prev, setPrev]       = useState<number | null>(null)
-  const [dir,  setDir]        = useState<1 | -1>(1)
-  const [userPaused, setUserPaused] = useState(false)
+  const [dir, setDir] = useState<1 | -1>(1)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const goTo = useCallback((idx: number, direction: 1 | -1 = 1) => {
-    setPrev(current); setDir(direction); setCurrent(idx)
-  }, [current])
+    setDir(direction)
+    setCurrent(idx)
+  }, [])
 
-  // ── KEY FIX: only auto-advance when the card is actually in the viewport
   useEffect(() => {
-    if (!autoPlay || !inView || userPaused || screenshots.length < 2) return
+    if (!autoPlay || !inView || screenshots.length < 2) return
     timerRef.current = setTimeout(() => goTo((current + 1) % screenshots.length, 1), 3400)
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [current, autoPlay, inView, userPaused, screenshots.length, goTo])
-
-  const handleDot = (i: number) => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    setUserPaused(false)
-    goTo(i, i > current ? 1 : -1)
-  }
+  }, [current, autoPlay, inView, screenshots.length, goTo])
 
   if (screenshots.length === 0) return null
 
-  const canPlay = autoPlay && inView && !userPaused
-
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* Only render current slide — no ghost slides wasting GPU */}
+      {screenshots.map((src, i) => (
+        <div key={src} style={{
+          position: 'absolute', inset: 0,
+          opacity: i === current ? 1 : 0,
+          // Use opacity-only transition — no translateX (avoids layout on large images)
+          transition: 'opacity 0.45s ease',
+          pointerEvents: i === current ? 'auto' : 'none',
+        }}>
+          <img
+            src={src}
+            alt={`Screenshot ${i + 1}`}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            // Explicit dimensions prevent reflow
+            width={1280}
+            height={800}
+            style={{
+              width: '100%', height: '100%',
+              objectFit: 'contain', background: '#07080f', display: 'block',
+            }}
+          />
+        </div>
+      ))}
 
-      {/* ── Slides ── */}
-      {screenshots.map((src, i) => {
-        const isCurrent = i === current
-        const isPrev    = i === prev
-        if (!isCurrent && !isPrev) return null
-        return (
-          <div key={src} style={{
-            position: 'absolute', inset: 0,
-            transform: isCurrent ? 'translateX(0)' : `translateX(${dir * -105}%)`,
-            opacity: isCurrent ? 1 : 0,
-            transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease',
-            willChange: 'transform, opacity',
-            overflow: 'hidden',
-          }}>
-            <img
-              src={src}
-              alt={`Screenshot ${i + 1}`}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              style={{
-                width: '100%', height: '100%',
-                objectFit: 'contain', background: '#07080f', display: 'block',
-                // Ken Burns: slow zoom while slide is active and playing
-                transform: isCurrent && canPlay ? 'scale(1.04)' : 'scale(1)',
-                transition: isCurrent && canPlay ? 'transform 3.4s ease-out' : 'transform 0.5s ease',
-              }}
-            />
-            {/* Reveal shimmer on slide-in */}
-            {isCurrent && (
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.055) 50%, transparent 60%)',
-                animation: 'shimmerSlide 0.7s ease forwards',
-              }} />
-            )}
-          </div>
-        )
-      })}
-
-      {/* ── Dots ── */}
+      {/* Dots */}
       {screenshots.length > 1 && (
         <div onClick={e => e.stopPropagation()} style={{
           position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)',
           display: 'flex', gap: '5px', alignItems: 'center',
-          background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)',
+          background: 'rgba(0,0,0,0.5)',
           padding: '5px 10px', borderRadius: '100px', zIndex: 10,
         }}>
           {screenshots.map((_, i) => (
-            <button key={i} onClick={() => handleDot(i)} aria-label={`Go to screenshot ${i + 1}`}
+            <button key={i} onClick={() => goTo(i, i > current ? 1 : -1)}
+              aria-label={`Screenshot ${i + 1}`}
               style={{
                 width: i === current ? '20px' : '6px', height: '6px',
                 borderRadius: '100px', border: 'none', padding: 0,
                 cursor: 'pointer', flexShrink: 0,
                 background: i === current ? accent : 'rgba(255,255,255,0.28)',
-                boxShadow: i === current ? `0 0 8px ${accent}80` : 'none',
-                transition: 'width 0.35s cubic-bezier(0.4,0,0.2,1), background 0.25s, box-shadow 0.25s',
+                transition: 'width 0.35s ease, background 0.25s',
               }}
             />
           ))}
         </div>
       )}
 
-      {/* ── Slide counter (top-right) ── */}
+      {/* Counter */}
       {screenshots.length > 1 && (
         <div style={{
           position: 'absolute', top: '8px', right: '10px', zIndex: 10,
-          fontFamily: 'monospace', fontSize: '0.6rem', letterSpacing: '0.08em',
+          fontFamily: 'monospace', fontSize: '0.6rem',
           color: 'rgba(255,255,255,0.45)',
-          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+          background: 'rgba(0,0,0,0.4)',
           padding: '2px 7px', borderRadius: '100px',
         }}>
           {current + 1} / {screenshots.length}
         </div>
       )}
 
-      {/* ── Progress bar (bottom edge) ── */}
-      {screenshots.length > 1 && canPlay && (
+      {/* Progress bar */}
+      {screenshots.length > 1 && autoPlay && inView && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'rgba(255,255,255,0.06)', zIndex: 10 }}>
           <div key={`${current}-bar`} style={{
             height: '100%', borderRadius: '0 2px 2px 0',
@@ -234,12 +210,18 @@ function ScreenshotCarousel({ screenshots, accent, autoPlay, inView }: {
 
 /* ─── Mac Browser Frame ───────────────────────────── */
 function MacBrowserFrame({ preview, screenshots, previewVideo, accent, title, isHovered, eager = false, inView = true }: {
-  preview?: string; screenshots?: string[]; previewVideo?: string; accent: string; title: string; isHovered: boolean; eager?: boolean; inView?: boolean
+  preview?: string; screenshots?: string[]; previewVideo?: string
+  accent: string; title: string; isHovered: boolean; eager?: boolean; inView?: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const allScreenshots = screenshots && screenshots.length > 0
-    ? screenshots
-    : preview ? [preview] : []
+  const allScreenshots = screenshots?.length ? screenshots : preview ? [preview] : []
+  const hasMedia = allScreenshots.length > 0 || !!previewVideo
+  const slug = title.toLowerCase().replace(/\s+/g, '-')
+
+  const siteUrl =
+    title === 'Onslog' ? 'onslog.com' :
+    title === 'BizzTunes' ? 'bizztunes.in' :
+    'zenfeed-app.vercel.app'
 
   useEffect(() => {
     if (!videoRef.current) return
@@ -247,20 +229,13 @@ function MacBrowserFrame({ preview, screenshots, previewVideo, accent, title, is
     else { videoRef.current.pause(); videoRef.current.currentTime = 0 }
   }, [isHovered])
 
-  const hasMedia = allScreenshots.length > 0 || previewVideo
-  const slug = title.toLowerCase().replace(/\s+/g, '-')
-
-  // FIX: In eager/modal mode, skip the 3D motion wrapper entirely — no rotateX/Y, no filter transitions
-  const frameContent = (
+  const inner = (
+    // No filter/drop-shadow on this div — moved to wrapper only when needed
     <div style={{
       background: 'rgba(24,26,38,0.97)',
       border: '1px solid rgba(255,255,255,0.09)',
       borderRadius: '11px',
       overflow: 'hidden',
-      // FIX: Use a static drop-shadow in modal instead of animated filter
-      filter: eager
-        ? `drop-shadow(0 28px 55px ${accent}28)`
-        : undefined,
     }}>
       {/* Title bar */}
       <div style={{
@@ -274,9 +249,7 @@ function MacBrowserFrame({ preview, screenshots, previewVideo, accent, title, is
             <div key={i} style={{
               width: '11px', height: '11px', borderRadius: '50%',
               background: isHovered ? c : 'rgba(255,255,255,0.12)',
-              // FIX: Remove box-shadow animation in eager mode
-              boxShadow: (!eager && isHovered) ? `0 0 5px ${c}70` : 'none',
-              transition: eager ? 'none' : 'all 0.3s ease',
+              transition: 'background 0.3s ease',
             }} />
           ))}
         </div>
@@ -287,94 +260,91 @@ function MacBrowserFrame({ preview, screenshots, previewVideo, accent, title, is
           display: 'flex', alignItems: 'center', padding: '0 7px', gap: '5px',
         }}>
           <svg width="7" height="7" viewBox="0 0 24 24" fill="none"
-            stroke={isHovered ? '#28c840' : 'rgba(255,255,255,0.18)'} strokeWidth="2.5"
-            style={{ flexShrink: 0 }}>
+            stroke={isHovered ? '#28c840' : 'rgba(255,255,255,0.18)'} strokeWidth="2.5" style={{ flexShrink: 0 }}>
             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
           </svg>
           <span style={{
             fontFamily: 'var(--font-mono)', fontSize: '8px',
             color: isHovered ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.18)',
             whiteSpace: 'nowrap', overflow: 'hidden', letterSpacing: '0.02em',
+            transition: 'color 0.3s ease',
           }}>
-            {isHovered
-              ? (title === 'Onslog' ? 'onslog.com' : `zenfeed-app.vercel.app`)
-              : 'gauravsood.dev'}
+            {isHovered ? siteUrl : 'gauravsood.dev'}
           </span>
         </div>
         <div style={{ width: '44px' }} />
       </div>
 
-      {/* Content area */}
+      {/* Content */}
       <div style={{
         position: 'relative', aspectRatio: '16/10',
         background: hasMedia ? '#080910' : `linear-gradient(135deg, ${accent}08, rgba(6,7,16,1) 65%)`,
         overflow: 'hidden',
+        // GPU layer for the content area that changes
+        transform: 'translateZ(0)',
       }}>
         {previewVideo ? (
           <video ref={videoRef} src={previewVideo} muted loop playsInline
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         ) : allScreenshots.length > 0 ? (
           <ScreenshotCarousel
-            screenshots={allScreenshots}
-            accent={accent}
-            autoPlay={isHovered || eager}
-            inView={inView}
+            screenshots={allScreenshots} accent={accent}
+            autoPlay={isHovered || eager} inView={inView}
           />
         ) : (
           <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <div style={{ width: '82%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
-                {[45, 55, 35].map((w, i) => <div key={i} style={{ height: '7px', width: `${w}%`, borderRadius: '3px', background: `${accent}${isHovered ? '22' : '10'}` }} />)}
+                {[45, 55, 35].map((w, i) => <div key={i} style={{ height: '7px', width: `${w}%`, borderRadius: '3px', background: `${accent}15` }} />)}
               </div>
               {[100, 80, 90, 65, 75].map((w, i) => (
                 <div key={i} style={{ height: i === 0 ? '36px' : '8px', width: `${w}%`, borderRadius: i === 0 ? '7px' : '3px', background: i === 0 ? `${accent}14` : 'rgba(255,255,255,0.04)', border: i === 0 ? `1px solid ${accent}20` : 'none' }} />
               ))}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                {[28, 28].map((w, i) => <div key={i} style={{ height: '26px', width: `${w}%`, borderRadius: '5px', background: i === 0 ? `${accent}22` : 'rgba(255,255,255,0.04)', border: `1px solid ${i === 0 ? accent + '35' : 'rgba(255,255,255,0.05)'}` }} />)}
-              </div>
             </div>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: `${accent}45`, letterSpacing: '0.1em' }}>
               📌 /public/previews/{slug}.png
             </p>
           </div>
         )}
-
-        {/* FIX: Skip shine animation entirely in modal (eager) mode */}
-        {!eager && (
-          <motion.div
-            animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? '220%' : '-60%' }}
-            transition={{ duration: 0.65, ease: 'easeInOut' }}
-            style={{ position: 'absolute', top: 0, left: '-55%', width: '38%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.045), transparent)', transform: 'skewX(-14deg)', pointerEvents: 'none' }}
-          />
-        )}
       </div>
     </div>
   )
 
-  // FIX: In modal (eager) mode, render plain div — no Framer motion 3D wrapper
+  // Eager (modal) mode — no motion, no 3D, no filter animation
   if (eager) {
     return (
-      <div style={{ width: '100%', willChange: 'auto' }}>
-        {frameContent}
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, height: '50px', pointerEvents: 'none', zIndex: -1, background: `linear-gradient(180deg, ${accent}06 0%, transparent 100%)`, filter: 'blur(3px)', transform: 'scaleY(-1)', opacity: 0.3, borderRadius: '0 0 11px 11px' }} />
+      <div style={{
+        width: '100%',
+        // Static shadow — no animation cost
+        filter: `drop-shadow(0 20px 40px rgba(0,0,0,0.5))`,
+      }}>
+        {inner}
       </div>
     )
   }
 
   return (
     <motion.div
-      animate={{ rotateX: isHovered ? 0 : 6, rotateY: isHovered ? 0 : -3, y: isHovered ? -8 : 0, scale: isHovered ? 1.02 : 1 }}
-      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      animate={{
+        rotateX: isHovered ? 0 : 5,
+        rotateY: isHovered ? 0 : -2,
+        y: isHovered ? -6 : 0,
+        scale: isHovered ? 1.015 : 1,
+      }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       style={{
-        transformStyle: 'preserve-3d', transformOrigin: 'center bottom', width: '100%',
+        transformStyle: 'preserve-3d',
+        transformOrigin: 'center bottom',
+        width: '100%',
+        // Only animate opacity of shadow — not the shadow value itself (cheaper)
         filter: isHovered
-          ? `drop-shadow(0 28px 55px ${accent}28) drop-shadow(0 0 0 1px ${accent}18)`
-          : 'drop-shadow(0 16px 36px rgba(0,0,0,0.55))',
-        transition: 'filter 0.5s ease',
+          ? `drop-shadow(0 24px 48px ${accent}25)`
+          : 'drop-shadow(0 12px 28px rgba(0,0,0,0.5))',
+        transition: 'filter 0.45s ease',
+        willChange: 'transform',
       }}
     >
-      {frameContent}
-      <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, height: '50px', pointerEvents: 'none', zIndex: -1, background: `linear-gradient(180deg, ${accent}06 0%, transparent 100%)`, filter: 'blur(3px)', transform: 'scaleY(-1)', opacity: isHovered ? 0.5 : 0.15, transition: 'opacity 0.4s ease', borderRadius: '0 0 11px 11px' }} />
+      {inner}
     </motion.div>
   )
 }
@@ -383,19 +353,18 @@ function MacBrowserFrame({ preview, screenshots, previewVideo, accent, title, is
 function ProjectCard({ project, onClick, index }: { project: Project; onClick: () => void; index: number }) {
   const isMobile = useIsMobile()
   const [hovered, setHovered] = useState(false)
-  const [cardInView, setCardInView] = useState(false)   // ← tracks real scroll visibility
+  const [cardInView, setCardInView] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   const mx = useMotionValue(0), my = useMotionValue(0)
-  const rotX = useSpring(useTransform(my, [-0.5, 0.5], [4, -4]), { stiffness: 140, damping: 18 })
-  const rotY = useSpring(useTransform(mx, [-0.5, 0.5], [-6, 6]), { stiffness: 140, damping: 18 })
+  const rotX = useSpring(useTransform(my, [-0.5, 0.5], [3, -3]), { stiffness: 120, damping: 20 })
+  const rotY = useSpring(useTransform(mx, [-0.5, 0.5], [-5, 5]), { stiffness: 120, damping: 20 })
 
-  // ── IntersectionObserver so the carousel only plays when scrolled into view
   useEffect(() => {
     const el = cardRef.current
     if (!el) return
     const obs = new IntersectionObserver(
       ([entry]) => setCardInView(entry.isIntersecting),
-      { threshold: 0.25 }   // at least 25% visible before starting
+      { threshold: 0.2 }
     )
     obs.observe(el)
     return () => obs.disconnect()
@@ -410,11 +379,7 @@ function ProjectCard({ project, onClick, index }: { project: Project; onClick: (
 
   const onMouseLeave = useCallback(() => { mx.set(0); my.set(0); setHovered(false) }, [mx, my])
 
-  const badgeColor: Record<string, string> = {
-    Production: '#06d6a0',
-    Live: '#4f6ef7',
-    'Open Source': '#f72585',
-  }
+  const badgeColor: Record<string, string> = { Production: '#06d6a0', Live: '#4f6ef7', 'Open Source': '#f72585' }
   const bColor = project.badge ? (badgeColor[project.badge] || '#4f6ef7') : project.accent
 
   return (
@@ -427,64 +392,122 @@ function ProjectCard({ project, onClick, index }: { project: Project; onClick: (
       role="button" tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && onClick()}
       aria-label={`View details for ${project.title}`}
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.65, delay: index * 0.15, ease: [0.16, 1, 0.3, 1] }}
-      whileTap={{ scale: 0.99 }}
+      transition={{ duration: 0.55, delay: index * 0.12, ease: [0.16, 1, 0.3, 1] }}
       style={{
         rotateX: isMobile ? 0 : rotX,
         rotateY: isMobile ? 0 : rotY,
         transformStyle: 'preserve-3d',
         cursor: 'pointer', position: 'relative',
+        // Solid base — cards never disappear
         background: hovered
-          ? `linear-gradient(145deg, ${project.color.replace('0.07', '0.14')}, rgba(7,9,18,0.96))`
-          : 'rgba(10,12,22,0.82)',
-        border: `1px solid ${hovered ? project.accent + '45' : 'rgba(100,120,255,0.1)'}`,
+          ? `linear-gradient(145deg, ${project.color.replace('0.07', '0.13')}, rgb(18,20,34) 60%)`
+          : 'rgb(18,20,34)',
+        border: `1.5px solid ${hovered ? project.accent + '55' : project.accent + '22'}`,
         borderRadius: '22px', padding: '26px',
         overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '22px',
-        backdropFilter: 'blur(8px)',
         boxShadow: hovered
-          ? `0 24px 64px ${project.accent}16, 0 0 0 1px ${project.accent}12`
-          : '0 4px 24px rgba(0,0,0,0.3)',
+          ? `0 20px 56px ${project.accent}18, 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 ${project.accent}12`
+          : `0 4px 24px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03)`,
         transition: 'background 0.4s ease, border-color 0.35s ease, box-shadow 0.35s ease',
+        // GPU layer for the card
+        willChange: 'transform',
       }}
     >
-      <div style={{ perspective: '900px' }}>
+      {/* Top accent strip */}
+      <div style={{
+        position: 'absolute', top: 0, left: 0,
+        width: hovered ? '110px' : '50px', height: '2.5px',
+        background: `linear-gradient(90deg, ${project.accent}, transparent)`,
+        borderRadius: '22px 0 0 0',
+        transition: 'width 0.5s cubic-bezier(0.22, 1, 0.36, 1)',
+      }} />
+
+      <div style={{ perspective: '900px', position: 'relative' }}>
         <MacBrowserFrame
-          preview={project.preview}
-          screenshots={project.screenshots}
-          previewVideo={project.previewVideo}
-          accent={project.accent}
-          title={project.title}
-          isHovered={hovered}
-          inView={cardInView}
+          preview={project.preview} screenshots={project.screenshots}
+          previewVideo={project.previewVideo} accent={project.accent}
+          title={project.title} isHovered={hovered} inView={cardInView}
         />
+
+        {/* Preview blur overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: '11px',
+          // Use opacity fade instead of animating backdrop-filter value
+          background: hovered ? 'transparent' : 'rgba(6,7,16,0.5)',
+          transition: 'background 0.35s ease',
+          pointerEvents: 'none', zIndex: 5,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+            opacity: hovered ? 0 : 1,
+            transform: hovered ? 'scale(0.88)' : 'scale(1)',
+            transition: 'opacity 0.3s ease, transform 0.3s ease',
+          }}>
+            <div style={{
+              width: '36px', height: '36px', borderRadius: '50%',
+              background: `${project.accent}22`, border: `1px solid ${project.accent}50`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke={project.accent} strokeWidth="2" strokeLinecap="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: '0.6rem',
+              color: project.accent, letterSpacing: '0.12em', textTransform: 'uppercase',
+              background: `${project.accent}15`, border: `1px solid ${project.accent}30`,
+              padding: '3px 10px', borderRadius: '100px',
+            }}>
+              Click to explore
+            </span>
+          </div>
+        </div>
       </div>
 
       <div style={{ position: 'relative', zIndex: 2 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.57rem', color: project.accent, letterSpacing: '0.14em', textTransform: 'uppercase', background: `${project.accent}14`, padding: '3px 9px', borderRadius: '100px', border: `1px solid ${project.accent}28` }}>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: '0.57rem', color: project.accent,
+              letterSpacing: '0.14em', textTransform: 'uppercase',
+              background: `${project.accent}14`, padding: '3px 9px', borderRadius: '100px',
+              border: `1px solid ${project.accent}28`,
+            }}>
               {project.category}
             </span>
             {project.badge && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: bColor, background: `${bColor}12`, border: `1px solid ${bColor}30`, padding: '3px 9px', borderRadius: '100px', letterSpacing: '0.1em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: bColor, boxShadow: `0 0 6px ${bColor}`, display: 'inline-block', animation: 'pulse-dot 2s ease-in-out infinite' }} />
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: bColor,
+                background: `${bColor}12`, border: `1px solid ${bColor}30`,
+                padding: '3px 9px', borderRadius: '100px', letterSpacing: '0.1em',
+                textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px',
+              }}>
+                <span style={{
+                  width: '5px', height: '5px', borderRadius: '50%',
+                  background: bColor, display: 'inline-block',
+                  animation: 'pulse-dot 2s ease-in-out infinite',
+                }} />
                 {project.badge}
               </span>
             )}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.57rem', color: 'var(--text-dim)' }}>{project.year}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.57rem', color: 'rgba(190,195,225,0.55)' }}>
+              {project.year}
+            </span>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {project.audioSrc && <span title="Voice intro available" style={{ fontSize: '0.8rem', opacity: 0.55 }}>🎙️</span>}
             {project.live && !project.internal && (
               <a href={project.live} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ color: 'var(--text-dim)', transition: 'color 0.2s', display: 'flex' }}
+                style={{ color: 'rgba(180,185,220,0.55)', transition: 'color 0.2s', display: 'flex' }}
                 onMouseEnter={e => (e.currentTarget.style.color = project.accent)}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-dim)')}
-                aria-label="Live site">
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(180,185,220,0.55)')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
                 </svg>
@@ -492,10 +515,9 @@ function ProjectCard({ project, onClick, index }: { project: Project; onClick: (
             )}
             {project.github && (
               <a href={project.github} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                style={{ color: 'var(--text-dim)', transition: 'color 0.2s', display: 'flex' }}
+                style={{ color: 'rgba(180,185,220,0.55)', transition: 'color 0.2s', display: 'flex' }}
                 onMouseEnter={e => (e.currentTarget.style.color = project.accent)}
-                onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-dim)')}
-                aria-label="GitHub repo">
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(180,185,220,0.55)')}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
                 </svg>
@@ -504,41 +526,69 @@ function ProjectCard({ project, onClick, index }: { project: Project; onClick: (
           </div>
         </div>
 
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 2.5vw, 1.5rem)', fontWeight: 700, color: 'var(--text)', marginBottom: '6px', lineHeight: 1.15 }}>
+        {/* Title — always white */}
+        <h3 style={{
+          fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 2.5vw, 1.5rem)',
+          fontWeight: 700, color: '#ffffff', marginBottom: '6px', lineHeight: 1.15,
+        }}>
           {project.title}
         </h3>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: project.accent, marginBottom: '10px', letterSpacing: '0.02em', opacity: 0.85 }}>
+        <p style={{
+          fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
+          color: project.accent, marginBottom: '10px', letterSpacing: '0.02em',
+        }}>
           {project.tagline}
         </p>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '16px' }}>
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: '0.84rem',
+          color: 'rgba(215,220,245,0.85)', lineHeight: 1.65, marginBottom: '16px',
+        }}>
           {project.description}
         </p>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
           {project.tech.slice(0, 5).map(t => (
-            <span key={t} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(100,120,255,0.12)', borderRadius: '5px', padding: '3px 8px', letterSpacing: '0.04em' }}>{t}</span>
+            <span key={t} style={{
+              fontFamily: 'var(--font-mono)', fontSize: '0.58rem',
+              color: hovered ? project.accent : 'rgba(195,200,230,0.7)',
+              background: hovered ? `${project.accent}12` : 'rgba(255,255,255,0.05)',
+              border: `1px solid ${hovered ? project.accent + '30' : 'rgba(255,255,255,0.1)'}`,
+              borderRadius: '5px', padding: '3px 8px', letterSpacing: '0.04em',
+              transition: 'color 0.35s, background 0.35s, border-color 0.35s',
+            }}>{t}</span>
           ))}
           {project.tech.length > 5 && (
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: 'var(--text-dim)', padding: '3px 4px' }}>+{project.tech.length - 5}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: 'rgba(180,185,215,0.5)', padding: '3px 4px' }}>
+              +{project.tech.length - 5}
+            </span>
           )}
         </div>
       </div>
 
-      <motion.div
-        animate={{ scaleX: hovered ? 1 : 0.25, opacity: hovered ? 1 : 0.35 }}
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: `linear-gradient(90deg, ${project.accent}, ${project.accent}30)`, borderRadius: '0 0 22px 22px', transformOrigin: 'left' }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      />
+      {/* Bottom bar */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px',
+        background: `linear-gradient(90deg, ${project.accent}, ${project.accent}20)`,
+        borderRadius: '0 0 22px 22px', transformOrigin: 'left',
+        transform: hovered ? 'scaleX(1)' : 'scaleX(0.2)',
+        opacity: hovered ? 1 : 0.35,
+        transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease',
+      }} />
 
-      <AnimatePresence>
-        {hovered && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.18 }}
-            style={{ position: 'absolute', bottom: '16px', right: '20px', fontFamily: 'var(--font-mono)', fontSize: '0.56rem', color: project.accent, letterSpacing: '0.1em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Explore
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {hovered && (
+        <div style={{
+          position: 'absolute', bottom: '16px', right: '20px',
+          fontFamily: 'var(--font-mono)', fontSize: '0.56rem',
+          color: project.accent, letterSpacing: '0.1em', textTransform: 'uppercase',
+          display: 'flex', alignItems: 'center', gap: '4px',
+          animation: 'fadeUp 0.18s ease forwards',
+        }}>
+          Explore
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -559,9 +609,9 @@ function VoicePlayer({ audioSrc, accent }: { audioSrc: string; accent: string })
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
 
   if (hasError) return (
-    <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px dashed var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '10px' }}>
       <span>🎙️</span>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.66rem', color: 'var(--text-dim)' }}>
+      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.66rem', color: 'rgba(180,185,215,0.6)' }}>
         Add voice file at <code style={{ color: accent }}>{audioSrc}</code>
       </span>
     </div>
@@ -584,14 +634,19 @@ function VoicePlayer({ audioSrc, accent }: { audioSrc: string; accent: string })
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: accent, letterSpacing: '0.1em' }}>🎙️ VOICE INTRO</span>
-            {playing && <div className="audio-bar" aria-hidden="true">{[...Array(4)].map((_, i) => <span key={i} style={{ background: accent }} />)}</div>}
           </div>
           <div style={{ height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', cursor: 'pointer' }}
-            onClick={e => { if (!audioRef.current) return; const r = e.currentTarget.getBoundingClientRect(); audioRef.current.currentTime = ((e.clientX - r.left) / r.width) * audioRef.current.duration }}>
+            onClick={e => {
+              if (!audioRef.current) return
+              const r = e.currentTarget.getBoundingClientRect()
+              audioRef.current.currentTime = ((e.clientX - r.left) / r.width) * audioRef.current.duration
+            }}>
             <div style={{ height: '100%', borderRadius: '2px', background: accent, width: `${progress}%`, transition: 'width 0.1s linear' }} />
           </div>
         </div>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-dim)', flexShrink: 0 }}>{duration ? fmt(duration) : '--:--'}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'rgba(180,185,215,0.6)', flexShrink: 0 }}>
+          {duration ? fmt(duration) : '--:--'}
+        </span>
       </div>
     </div>
   )
@@ -608,149 +663,215 @@ function ProjectModal({ project, onClose }: { project: Project; onClose: () => v
 
   return (
     <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      // FIX: Reduced blur from 18px → 6px — this is the single biggest perf win
-      // backdrop-filter blur is GPU-composited but still expensive at high values
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(3,4,12,0.88)',
-        backdropFilter: 'blur(6px)',
-        WebkitBackdropFilter: 'blur(6px)',
+        // KEY PERF FIX #1: No backdropFilter — replaced with a solid dark overlay
+        // backdrop-filter forces the browser to composite every layer behind it every frame
+        background: 'rgba(2,3,10,0.92)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-        // FIX: Promote overlay to its own composite layer
         willChange: 'opacity',
       }}
-      role="dialog" aria-modal="true" aria-label={`Project: ${project.title}`}
+      role="dialog" aria-modal="true"
     >
       <motion.div
-        initial={{ opacity: 0, y: 50, scale: 0.94 }}
+        initial={{ opacity: 0, y: 36, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 40, scale: 0.95 }}
-        // FIX: Faster, simpler easing — less work for the main thread on open
-        transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
+        exit={{ opacity: 0, y: 28, scale: 0.96 }}
+        transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
         onClick={e => e.stopPropagation()}
         style={{
-          background: 'rgba(10,12,22,0.98)',
-          border: `1px solid ${project.accent}28`,
+          background: 'rgb(12,14,26)',
+          border: `1px solid ${project.accent}25`,
           borderRadius: '26px',
           maxWidth: '740px', width: '100%', maxHeight: '90vh',
           overflowY: 'auto', position: 'relative',
-          // FIX: Replaced `0 0 100px` spread with cheaper multi-layer shadow
-          boxShadow: `0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px ${project.accent}15`,
-          // FIX: GPU-promote the modal panel itself
+          // KEY PERF FIX #2: Simple shadow — no large blur radius on box-shadow
+          boxShadow: `0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px ${project.accent}12`,
+          // KEY PERF FIX #3: Promote to own composite layer before animation starts
           willChange: 'transform, opacity',
           transform: 'translateZ(0)',
         }}
       >
-        {/* Mac preview — eager=true disables all motion inside */}
-        <div style={{ padding: '28px 28px 0', background: `linear-gradient(180deg, ${project.accent}07 0%, transparent 100%)`, borderRadius: '26px 26px 0 0' }}>
+        {/* Mac preview — eager=true: no motion inside, static shadow */}
+        <div style={{
+          padding: '28px 28px 0',
+          background: `linear-gradient(180deg, ${project.accent}07 0%, transparent 100%)`,
+          borderRadius: '26px 26px 0 0',
+        }}>
           <MacBrowserFrame
-            preview={project.preview}
-            screenshots={project.screenshots}
-            previewVideo={project.previewVideo}
-            accent={project.accent}
-            title={project.title}
-            isHovered={true}
-            eager={true}
+            preview={project.preview} screenshots={project.screenshots}
+            previewVideo={project.previewVideo} accent={project.accent}
+            title={project.title} isHovered eager
           />
         </div>
 
-        {/* Content */}
         <div style={{ padding: 'clamp(22px, 4vw, 38px)' }}>
-          <motion.button onClick={onClose} whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
-            aria-label="Close" style={{ position: 'absolute', top: '18px', right: '18px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Close button */}
+          <motion.button
+            onClick={onClose}
+            whileHover={{ scale: 1.1, rotate: 90 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Close"
+            style={{
+              position: 'absolute', top: '18px', right: '18px',
+              background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '50%', width: '36px', height: '36px',
+              cursor: 'pointer', color: 'rgba(180,185,215,0.7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
           </motion.button>
 
+          {/* Badges */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.63rem', color: project.accent, background: `${project.accent}14`, padding: '4px 12px', borderRadius: '100px', border: `1px solid ${project.accent}28` }}>
+            <span style={{
+              fontFamily: 'var(--font-mono)', fontSize: '0.63rem', color: project.accent,
+              background: `${project.accent}14`, padding: '4px 12px', borderRadius: '100px',
+              border: `1px solid ${project.accent}28`,
+            }}>
               {project.category}
             </span>
             {project.badge && (
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#06d6a0', background: 'rgba(6,214,160,0.1)', border: '1px solid rgba(6,214,160,0.25)', padding: '4px 12px', borderRadius: '100px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#06d6a0', boxShadow: '0 0 6px #06d6a0', display: 'inline-block' }} />
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#06d6a0',
+                background: 'rgba(6,214,160,0.1)', border: '1px solid rgba(6,214,160,0.25)',
+                padding: '4px 12px', borderRadius: '100px',
+                display: 'flex', alignItems: 'center', gap: '5px',
+              }}>
+                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#06d6a0', display: 'inline-block' }} />
                 {project.badge}
               </span>
             )}
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-dim)' }}>{project.year}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'rgba(180,185,215,0.5)' }}>
+              {project.year}
+            </span>
           </div>
 
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 4vw, 2.3rem)', fontWeight: 800, color: 'var(--text)', marginBottom: '6px', lineHeight: 1.1 }}>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 4vw, 2.3rem)',
+            fontWeight: 800, color: '#ffffff', marginBottom: '6px', lineHeight: 1.1,
+          }}>
             {project.title}
           </h2>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: project.accent, marginBottom: '16px', opacity: 0.85 }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: project.accent, marginBottom: '16px' }}>
             {project.tagline}
           </p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.93rem', color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: '24px' }}>
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: '0.93rem',
+            color: 'rgba(220,225,250,0.88)', lineHeight: 1.8, marginBottom: '24px',
+          }}>
             {project.longDescription}
           </p>
 
-          {/* Highlights — FIX: removed per-item motion stagger, use CSS animation instead */}
+          {project.audioSrc && (
+            <div style={{ marginBottom: '26px' }}>
+              <p style={{
+                fontFamily: 'var(--font-mono)', fontSize: '0.62rem',
+                color: 'rgba(180,185,215,0.6)', letterSpacing: '0.14em',
+                textTransform: 'uppercase', marginBottom: '10px',
+              }}>
+                Hear about this project
+              </p>
+              <VoicePlayer audioSrc={project.audioSrc} accent={project.accent} />
+            </div>
+          )}
+
+
+          {/* Highlights — pure CSS animation, no Framer stagger */}
           {project.highlights && (
             <div style={{ marginBottom: '26px' }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--text-dim)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              <p style={{
+                fontFamily: 'var(--font-mono)', fontSize: '0.62rem',
+                color: 'rgba(180,185,215,0.6)', letterSpacing: '0.14em',
+                textTransform: 'uppercase', marginBottom: '12px',
+              }}>
                 What I Built
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                 {project.highlights.map((h, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      fontFamily: 'var(--font-body)', fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.5,
-                      padding: '10px 14px',
-                      background: `${project.accent}07`, border: `1px solid ${project.accent}18`,
-                      borderRadius: '10px', borderLeft: `3px solid ${project.accent}60`,
-                      // FIX: CSS animation instead of Framer stagger — much cheaper
-                      opacity: 0,
-                      animation: `fadeSlideIn 0.3s ease forwards`,
-                      animationDelay: `${i * 0.04}s`,
-                    }}
-                  >
+                  <div key={i} style={{
+                    fontFamily: 'var(--font-body)', fontSize: '0.86rem',
+                    color: 'rgba(215,220,245,0.88)', lineHeight: 1.5,
+                    padding: '10px 14px',
+                    background: `${project.accent}07`, border: `1px solid ${project.accent}18`,
+                    borderRadius: '10px', borderLeft: `3px solid ${project.accent}60`,
+                    // KEY PERF FIX #4: CSS keyframe instead of Framer per-item motion
+                    opacity: 0,
+                    animation: 'fadeSlideIn 0.28s ease forwards',
+                    animationDelay: `${i * 0.035}s`,
+                  }}>
                     {h}
                   </div>
                 ))}
               </div>
             </div>
           )}
-
-          {project.audioSrc && (
-            <div style={{ marginBottom: '26px' }}>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--text-dim)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '10px' }}>Hear about this project</p>
-              <VoicePlayer audioSrc={project.audioSrc} accent={project.accent} />
-            </div>
-          )}
-
+          {/* Tech */}
           <div style={{ marginBottom: '26px' }}>
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: 'var(--text-dim)', letterSpacing: '0.14em', textTransform: 'uppercase', marginBottom: '12px' }}>Tech Stack</p>
+            <p style={{
+              fontFamily: 'var(--font-mono)', fontSize: '0.62rem',
+              color: 'rgba(180,185,215,0.6)', letterSpacing: '0.14em',
+              textTransform: 'uppercase', marginBottom: '12px',
+            }}>
+              Tech Stack
+            </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               {project.tech.map(t => (
-                <span key={t} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: project.accent, background: `${project.accent}10`, border: `1px solid ${project.accent}28`, borderRadius: '8px', padding: '5px 12px' }}>{t}</span>
+                <span key={t} style={{
+                  fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
+                  color: project.accent, background: `${project.accent}10`,
+                  border: `1px solid ${project.accent}28`, borderRadius: '8px', padding: '5px 12px',
+                }}>{t}</span>
               ))}
             </div>
           </div>
 
+          {/* CTA buttons */}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {project.github && (
               <motion.a href={project.github} target="_blank" rel="noopener noreferrer"
                 whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 22px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text)', textDecoration: 'none', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500 }}>
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '11px 22px', borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#ffffff', textDecoration: 'none',
+                  fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 500,
+                }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
                 View Code
               </motion.a>
             )}
             {project.live && (
               <motion.a href={project.live} target="_blank" rel="noopener noreferrer"
-                whileHover={{ y: -2, boxShadow: `0 0 28px ${project.accent}35` }} whileTap={{ scale: 0.97 }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 22px', borderRadius: '10px', background: `linear-gradient(135deg, ${project.accent}, ${project.accent}bb)`, border: 'none', color: '#fff', textDecoration: 'none', fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600, transition: 'box-shadow 0.3s ease' }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '11px 22px', borderRadius: '10px',
+                  background: `linear-gradient(135deg, ${project.accent}, ${project.accent}cc)`,
+                  border: 'none', color: '#fff', textDecoration: 'none',
+                  fontFamily: 'var(--font-body)', fontSize: '0.88rem', fontWeight: 600,
+                }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
                 {project.internal ? 'Visit Site' : 'Live Demo'}
               </motion.a>
             )}
             {project.internal && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 18px', borderRadius: '10px', background: 'rgba(6,214,160,0.06)', border: '1px solid rgba(6,214,160,0.18)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#06d6a0' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '11px 18px', borderRadius: '10px',
+                background: 'rgba(6,214,160,0.06)', border: '1px solid rgba(6,214,160,0.18)',
+                fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#06d6a0',
+              }}>
                 🔒 Internal tools demo on request
               </div>
             )}
@@ -769,19 +890,30 @@ export default function Projects() {
     <section id="projects" className="section" aria-labelledby="projects-heading">
       <div className="container">
         <motion.div
-          initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           style={{ marginBottom: '64px' }}
         >
           <p className="section-label">Featured Work</p>
-          <h2 id="projects-heading" style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 800, color: 'var(--text)', lineHeight: 1.1 }}>
+          <h2 id="projects-heading" style={{
+            fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+            fontWeight: 800, color: '#ffffff', lineHeight: 1.1,
+          }}>
             Projects I've{' '}
-            <span style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent3))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+            <span style={{
+              background: 'linear-gradient(135deg, var(--accent), var(--accent3))',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            }}>
               Shipped
             </span>
           </h2>
-          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--text-muted)', marginTop: '12px', fontSize: '0.92rem', lineHeight: 1.6 }}>
-            Two production projects — one enterprise client build, one personal full-stack app.
+          <p style={{
+            fontFamily: 'var(--font-body)', color: 'rgba(210,215,240,0.72)',
+            marginTop: '12px', fontSize: '0.92rem', lineHeight: 1.6,
+          }}>
+            Three production projects — enterprise client build, full-stack app, and a client marketing site.
             <br />Hover to preview · click to dive deeper · 🎙️ voice intro inside.
           </p>
         </motion.div>
@@ -804,22 +936,22 @@ export default function Projects() {
 
       <style>{`
         @keyframes pulse-dot {
-          0%,100% { box-shadow: 0 0 4px currentColor; }
-          50%      { box-shadow: 0 0 10px currentColor; }
+          0%,100% { opacity: 1; }
+          50%      { opacity: 0.5; }
         }
         @keyframes fadeSlideIn {
-          from { opacity: 0; transform: translateX(-12px); }
+          from { opacity: 0; transform: translateX(-10px); }
           to   { opacity: 1; transform: translateX(0); }
         }
         @keyframes slideProgress {
           from { width: 0%; }
           to   { width: 100%; }
         }
-        @keyframes shimmerSlide {
-          from { transform: translateX(-100%); opacity: 1; }
-          to   { transform: translateX(200%); opacity: 0; }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(5px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </section>
   )
-}
+} 
