@@ -1,6 +1,7 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring } from 'framer-motion'
+import { useForm, ValidationError } from '@formspree/react'
 import { useIsMobile } from '@/lib/usePerformance'
 
 const SOCIALS = [
@@ -21,7 +22,7 @@ const SOCIALS = [
   },
 ]
 
-function MagneticButton({ status }: { status: string }) {
+function MagneticButton({ status }: { status: 'idle' | 'sending' | 'sent' | 'error' }) {
   const ref = useRef<HTMLButtonElement>(null)
   const isMobile = useIsMobile()
   const x = useMotionValue(0)
@@ -148,14 +149,14 @@ function Field({ id, label, type = 'text', value, onChange, placeholder, require
         {label}{required && <span style={{ color: 'var(--accent4)', marginLeft: '3px' }}>*</span>}
       </motion.label>
       {multiline ? (
-        <textarea id={id} rows={5} required={required} value={value}
+        <textarea id={id} name={id} rows={5} required={required} value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={focused ? placeholder : ''}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           style={{ ...baseStyle, paddingTop: '28px' }} aria-required={required}
         />
       ) : (
-        <input id={id} type={type} required={required} value={value}
+        <input id={id} name={id} type={type} required={required} value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={focused ? placeholder : ''}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
@@ -213,17 +214,30 @@ function SocialCard({ item, index }: { item: typeof SOCIALS[number]; index: numb
   )
 }
 
+// Need useRef for MagneticButton
+import { useRef } from 'react'
+
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '' })
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [fsState, fsSubmit] = useForm('mwvnqzpj')
+
+  const status: 'idle' | 'sending' | 'sent' | 'error' =
+    fsState.succeeded  ? 'sent'    :
+    fsState.submitting ? 'sending' :
+    fsState.errors && Array.isArray(fsState.errors) && fsState.errors.length > 0 ? 'error' :
+    'idle'
+
+  // Clear local fields after a successful send
+  useEffect(() => {
+    if (fsState.succeeded) {
+      setForm({ name: '', email: '', message: '' })
+    }
+  }, [fsState.succeeded])
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setStatus('sending')
-    await new Promise(r => setTimeout(r, 1800))
-    setStatus('sent')
-    setForm({ name: '', email: '', message: '' })
-    setTimeout(() => setStatus('idle'), 5000)
+    fsSubmit(e)
   }
 
   return (
@@ -265,7 +279,7 @@ export default function Contact() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))', gap: '48px', alignItems: 'start' }}>
 
-          {/* Form */}
+          {/* ── Contact Form ── */}
           <motion.form
             initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
@@ -288,9 +302,31 @@ export default function Contact() {
               </span>
             </div>
 
-            <Field id="name" label="Your Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="John Appleseed" required />
-            <Field id="email" label="Email Address" type="email" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} placeholder="john@company.com" required />
-            <Field id="message" label="Message" value={form.message} onChange={v => setForm(f => ({ ...f, message: v }))} placeholder="Tell me about your project, timeline, and budget…" required multiline />
+            {/* Fields — name="name/email/message" so Formspree can read them */}
+            <Field id="name" label="Your Name" value={form.name}
+              onChange={v => setForm(f => ({ ...f, name: v }))}
+              placeholder="John Appleseed" required />
+            <ValidationError prefix="Name" field="name" errors={fsState.errors}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: '#f72585', marginTop: '-18px' }} />
+
+            <Field id="email" label="Email Address" type="email" value={form.email}
+              onChange={v => setForm(f => ({ ...f, email: v }))}
+              placeholder="john@company.com" required />
+            <ValidationError prefix="Email" field="email" errors={fsState.errors}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: '#f72585', marginTop: '-18px' }} />
+
+            <Field id="message" label="Message" value={form.message}
+              onChange={v => setForm(f => ({ ...f, message: v }))}
+              placeholder="Tell me about your project, timeline, and budget…" required multiline />
+            <ValidationError prefix="Message" field="message" errors={fsState.errors}
+              style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: '#f72585', marginTop: '-18px' }} />
+
+            {/* Global Formspree error */}
+            {status === 'error' && (
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#f72585' }}>
+                Something went wrong. Please try again or email me directly.
+              </p>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
               <MagneticButton status={status} />
@@ -300,7 +336,7 @@ export default function Contact() {
             </div>
           </motion.form>
 
-          {/* Right column */}
+          {/* ── Right column ── */}
           <motion.div
             initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }} transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -334,7 +370,7 @@ export default function Contact() {
               </div>
             </div>
 
-            {/* Response time badge */}
+            {/* Response time */}
             <div style={{
               background: 'rgba(79,110,247,0.04)', border: '1px solid var(--border)',
               borderRadius: '16px', padding: '18px 22px',

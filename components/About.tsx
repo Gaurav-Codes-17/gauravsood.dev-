@@ -363,7 +363,7 @@ export default function About() {
               {[
                 { label: 'Based In', value: 'India 🇮🇳' },
                 { label: 'Focus',    value: 'Full Stack' },
-                { label: 'Education', value: 'B.Tech' },
+                { label: 'Education', value: 'B.C.A - Panjab University' },
                 { label: 'Status',   value: '🟢 Open to Work' },
               ].map((fact, i) => (
                 <div

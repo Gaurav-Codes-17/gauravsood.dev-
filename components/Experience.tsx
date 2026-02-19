@@ -74,10 +74,10 @@ const EXPERIENCES: Experience[] = [
     tech: ['Next.js', 'TypeScript', 'Node.js', 'MongoDB', 'Cloudinary', 'Brevo'],
     projects: [
     { name: 'ONS Logistics', url: 'https://onslog.com', description: 'Multi-tenant logistics SaaS handling quotations, jobs, and shipments' },
-    { name: 'Quotation Workflow', description: 'End-to-end quotation creation, approval, and PDF export flow' },
+    { name: 'Quotation & Job Workflow', description: 'End-to-end quotation creation, approval, and PDF export flow' },
     { name: 'RBAC System', description: 'Role-based access across Admin, Manager, and Staff users' },
-    { name: 'Admin Dashboard', description: 'Operational dashboards with filters, tables, and analytics' },
-    { name: 'Client Dashboard', description: 'Operational dashboards with all the related jobs and quotation with proper kyc verification of the clients ' },
+    { name: 'Admin Dashboard & Analytics', description: 'Operational dashboards with filters, tables, and analytics' },
+    { name: 'Client Dashboard & KYC Verification', description: 'Operational dashboards with all the related jobs and quotation with proper kyc verification of the clients ' },
   ]
   },
 ]
