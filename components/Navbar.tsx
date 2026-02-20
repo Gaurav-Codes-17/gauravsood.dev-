@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion'
-
+import Image from 'next/image'
 const NAV_LINKS = [
   { href: '#about', label: 'About' },
   { href: '#projects', label: 'Projects' },
@@ -92,25 +92,12 @@ export default function Navbar() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
               textDecoration: 'none',
             }}
           >
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, var(--accent), var(--accent2))',
-                display: 'grid',
-                placeItems: 'center',
-                boxShadow: '0 0 20px var(--glow)',
-              }}
-            >
-              <span style={{ color: '#fff', fontWeight: 800 }}>G</span>
-            </div>
+            <Image src={'/logo.png'} alt="logo" width={90} height={90} priority />
             <span style={{ fontWeight: 700, color: 'var(--text)' }}>
-              Gaurav<span style={{ color: 'var(--accent)' }}>.</span>
+              Gaurav <span style={{ color: 'var(--accent)' }}>Sood.</span>
             </span>
           </motion.a>
 
