@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 const visitMap = new Map();
 const COOLDOWN_MS = 60 * 60 * 1000; 
 
-export async function GET(req) {
+export async function POST(req) {
   try {
   const rawIp = req.headers.get("x-forwarded-for")?.split(",")[0].trim();
 const ip = (!rawIp || rawIp === "::1" || rawIp === "127.0.0.1") ? "8.8.8.8" : rawIp;
