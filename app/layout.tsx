@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import TrackVisit from '@/components/TrackVisit'
 import { Space_Mono, Syne, Outfit } from 'next/font/google'
 import './globals.css'
 
@@ -94,7 +95,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
       </head>
-      <body>{children}</body>
+      <body>
+        <TrackVisit />
+        {children}
+        </body>
     </html>
   )
 }
